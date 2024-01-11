@@ -13,7 +13,7 @@ router.get("/", (req, res, next) => {
         count: docs.length,
         products: docs.map((doc) => {
           return {
-            ...doc,
+            ...doc._doc,
             request: {
               type: "GET",
               url: "http://localhost:3000/products" + doc._id,
@@ -39,11 +39,19 @@ router.post("/", (req, res, next) => {
   });
   product
     .save()
-    .then((res) => {
+    .then((result) => {
       console.log(res);
       res.status(201).json({
-        message: "Handling POST request to /products",
-        createdProduct: res,
+        message: "Created product successfully",
+        createdProduct: {
+          name: result.name,
+          price: result.price,
+          _id: result._id,
+          request: {
+            type: "POST",
+            url: "http://localhost:3000/products" + result._id,
+          },
+        },
       });
     })
     .catch((err) => {
@@ -57,11 +65,18 @@ router.post("/", (req, res, next) => {
 router.get("/:productId", (req, res, next) => {
   const id = req.params.productId;
   Product.findById(id)
+    .select("name price _id")
     .exec()
     .then((doc) => {
       console.log("From database: ", doc);
       if (doc) {
-        res.status(200).json(doc);
+        res.status(200).json({
+          product: doc,
+          request: {
+            type: "GET",
+            url: "http://localhost:3000/products",
+          },
+        });
       } else {
         res.status(404).json({ message: "No valid entry for provided id" });
       }
@@ -79,7 +94,15 @@ router.patch("/:productId", (req, res, next) => {
     updateOps[ops.propName] = ops.value;
   }
   Product.findByIdAndUpdate(id, { $set: updateOps }, { new: true })
-    .then((result) => res.status(200).json(result))
+    .then((result) =>
+      res.status(200).json({
+        message: "Product updated successfully",
+        request: {
+          type: "GET",
+          url: "http://localhost:3000/products/" + id,
+        },
+      })
+    )
     .catch((err) => res.status(500).json({ error: err }));
   //   Product.update({ _id: id }, { $set: updateOps })
   //     .exec()
@@ -98,7 +121,14 @@ router.delete("/:productId", (req, res, next) => {
   Product.deleteOne({ _id: id })
     .exec()
     .then((result) => {
-      res.status(200).json(result);
+      res.status(200).json({
+        message: "Product deleted successfully",
+        request: {
+          type: "POST",
+          url: "http://localhost:3000/products",
+          body: { name: "String", price: "Number" },
+        },
+      });
     })
     .catch((err) => {
       console.log(err);
