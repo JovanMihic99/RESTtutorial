@@ -4,6 +4,7 @@ const app = express();
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+
 const productRoutes = require("./api/routes/products");
 const orderRoutes = require("./api/routes/orders");
 
@@ -14,6 +15,8 @@ mongoose.connect(
     process.env.MONGO_ATLAS_PW +
     "@node-rest-shop.wxjo05b.mongodb.net/"
 );
+
+app.use("/uploads", express.static("uploads"));
 
 // Logger
 app.use(morgan("dev"));
